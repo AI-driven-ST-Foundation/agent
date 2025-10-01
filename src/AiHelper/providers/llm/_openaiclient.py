@@ -3,8 +3,8 @@ from openai.types.chat import ChatCompletion
 from typing import Optional, Dict, List, Union
 import os
 from dotenv import load_dotenv
-from Libraries.AiHelper.common._logger import RobotCustomLogger
-from Libraries.AiHelper.providers.llm._baseclient import BaseLLMClient
+from src.AiHelper.common._logger import RobotCustomLogger
+from src.AiHelper.providers.llm._baseclient import BaseLLMClient
 
 class OpenAIClient(BaseLLMClient):
     

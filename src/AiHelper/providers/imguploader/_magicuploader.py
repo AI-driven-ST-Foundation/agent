@@ -1,9 +1,9 @@
 import os
 import requests
 from typing import NoReturn, Optional
-from Libraries.AiHelper.config.config import Config
-from Libraries.AiHelper.common._logger import RobotCustomLogger 
-from Libraries.AiHelper.providers.imguploader._imgbase import BaseImageUploader
+from src.AiHelper.config.config import Config
+from src.AiHelper.common._logger import RobotCustomLogger 
+from src.AiHelper.providers.imguploader._imgbase import BaseImageUploader
 """
 API documentation
 https://api.market/store/magicapi/image-upload

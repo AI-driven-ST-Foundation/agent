@@ -5,7 +5,7 @@ from PIL import Image
 import io
 from gradio_client import Client, handle_file
 from robot.libraries.BuiltIn import BuiltIn
-from Libraries.AiHelper.common._logger import RobotCustomLogger
+from src.AiHelper.common._logger import RobotCustomLogger
 class OmniParser:
     """Client for Microsoft's OmniParser v2 model on Hugging Face."""
     

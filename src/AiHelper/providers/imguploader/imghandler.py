@@ -1,9 +1,9 @@
 from typing import Optional
-from Libraries.AiHelper.config.config import Config
-from Libraries.AiHelper.providers.imguploader._imgbb import ImgBBUploader
-from Libraries.AiHelper.providers.imguploader._imghost import FreeImageHostUploader
-from Libraries.AiHelper.providers.imguploader._magicuploader import MagicAPIUploader
-from Libraries.AiHelper.providers.imguploader._imgbase import BaseImageUploader
+from src.AiHelper.config.config import Config
+from src.AiHelper.providers.imguploader._imgbb import ImgBBUploader
+from src.AiHelper.providers.imguploader._imghost import FreeImageHostUploader
+from src.AiHelper.providers.imguploader._magicuploader import MagicAPIUploader
+from src.AiHelper.providers.imguploader._imgbase import BaseImageUploader
 
 class ImageUploader:
     

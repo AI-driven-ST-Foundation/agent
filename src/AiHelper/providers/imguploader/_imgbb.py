@@ -1,9 +1,9 @@
 import os
 import requests
 from typing import Optional
-from Libraries.AiHelper.common._logger import RobotCustomLogger
-from Libraries.AiHelper.config.config import Config
-from Libraries.AiHelper.providers.imguploader._imgbase import BaseImageUploader
+from src.AiHelper.common._logger import RobotCustomLogger
+from src.AiHelper.config.config import Config
+from src.AiHelper.providers.imguploader._imgbase import BaseImageUploader
 
 class ImgBBUploader(BaseImageUploader):
     def __init__(self):

@@ -1,6 +1,6 @@
-from Libraries.AiHelper.common._logger import RobotCustomLogger
-from Libraries.AiHelper.common._utils import Utilities
-from Libraries.AiHelper.providers.imguploader.imghandler import ImageUploader
+from src.AiHelper.common._logger import RobotCustomLogger
+from src.AiHelper.common._utils import Utilities
+from src.AiHelper.providers.imguploader.imghandler import ImageUploader
 
 class ChatPromptFactory:
 

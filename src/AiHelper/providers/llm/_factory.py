@@ -1,6 +1,6 @@
 from typing import Optional
-from Libraries.AiHelper.providers.llm._baseclient import BaseLLMClient
-from Libraries.AiHelper.providers.llm._openaiclient import OpenAIClient
+from src.AiHelper.providers.llm._baseclient import BaseLLMClient
+from src.AiHelper.providers.llm._openaiclient import OpenAIClient
 
 class LLMClientFactory:
     @staticmethod
