@@ -1,0 +1,9 @@
+openai
+tiktoken
+Pillow
+requests
+python-dotenv
+gradio_client
+robotframework
+robotframework-appiumlibrary
+Appium-Python-Client
