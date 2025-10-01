@@ -1,19 +1,19 @@
 import time
-from Libraries.AiHelper.common._logger import RobotCustomLogger
+from src.AiHelper.common._logger import RobotCustomLogger
 import base64
 from robot.libraries.BuiltIn import BuiltIn
 from typing import Any, List, Dict, Optional
-from Libraries.AiHelper.common._parserutils import BBoxToClickCoordinates
-from Libraries.AiHelper.providers.llm._factory import LLMClientFactory
-from Libraries.AiHelper.config.config import Config
+from src.AiHelper.common._parserutils import BBoxToClickCoordinates
+from src.AiHelper.providers.llm._factory import LLMClientFactory
+from src.AiHelper.config.config import Config
 from robot.api.deco import keyword
-from Libraries.AiHelper.providers.imguploader.imghandler import ImageUploader
-from Libraries.AiHelper.common._logger import RobotCustomLogger
-from Libraries.AiHelper.common._utils import Utilities
-from Libraries.AiHelper.common._tiktoken import TokenHelper
-from Libraries.AiHelper.providers.promptfactory import ChatPromptFactory
+from src.AiHelper.providers.imguploader.imghandler import ImageUploader
+from src.AiHelper.common._logger import RobotCustomLogger
+from src.AiHelper.common._utils import Utilities
+from src.AiHelper.common._tiktoken import TokenHelper
+from src.AiHelper.providers.promptfactory import ChatPromptFactory
 from appium.webdriver.common.appiumby import AppiumBy
-from Libraries.AiHelper.providers.llm._huggingface import OmniParser
+from src.AiHelper.providers.llm._huggingface import OmniParser
 
 __all__ = ['AiHelper']
 
@@ -146,7 +146,7 @@ class AiHelper:
     def click_on_ui_element(self, element_description: str):
         built_in = BuiltIn()
         driver = built_in.get_library_instance("AppiumLibrary")._current_application()
-        from Libraries.Core._screenshot import _Screenshot
+        from src.AiHelper.utils._screenshot import _Screenshot
         screenshot = _Screenshot()._capture_page_screenshot(filename="omniparser_screenshot.png")
         # screenshot_bytes = base64.b64decode(screenshot)
     

@@ -17,7 +17,7 @@ class OpenAIClient(BaseLLMClient):
     ):
         self.api_key : str = api_key
         if not self.api_key:
-            from Libraries.AiHelper.config.config import Config
+            from src.AiHelper.config.config import Config
             config = Config()
             self.api_key = config.OPENAI_API_KEY
             self.logger.info(f"API key from config file : {self.api_key}")
