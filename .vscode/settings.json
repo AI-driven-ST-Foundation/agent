@@ -1,0 +1,17 @@
+{
+    "robot.language-server.python": "${workspaceFolder}/env/bin/python",
+    "robot.python.executable": "${workspaceFolder}/env/bin/python",
+    "robot.pythonpath": [
+        "${workspaceFolder}/src/AiHelper/",
+        "${workspaceFolder}/src/",
+        "${workspaceFolder}/"
+    ],
+    "emmet.variables": {
+    },
+    "robot.variables": {
+        "EXECDIR": "${workspaceFolder}",
+        "platformName": "Android",
+        "Device_location": "local",
+    },
+    "python.terminal.activateEnvironment": true
+}

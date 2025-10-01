@@ -1,0 +1,51 @@
+{
+    "configurations": [
+      {
+        "type": "robotframework-lsp",
+        "name": "Robot Framework: Launch template",
+        "request": "launch",
+        "terminal": "integrated",
+        "args": [
+          "-T",
+          "-d",
+          "Reports/${input:shortDate}",
+          "-V",
+          "globalsettings.yaml",
+          "--pythonpath",
+          "${workspaceFolder}"
+        ],
+      }
+    ],
+    "version": "2.0.0",
+    "tasks": [
+        {
+        "label": "echo date",
+        "type": "shell",
+        "command": "echo",
+        "args": [ "${input:shortDate}" ],
+        "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+        "id": "shortDate",
+        "type": "command",
+        "command": "extension.commandvariable.dateTime",
+        "args": {
+            "locale": "fr-FR",
+            "options": {
+            "weekday": "long",
+            "year": "numeric",
+            "month": "long",
+            "day": "2-digit",
+            "hour12": false,
+            "hour": "2-digit",
+            "minute": "2-digit",
+            "second": "2-digit"
+            },
+            "template": "${month}_${year}/${weekday}_${day}/${hour}:${minute}"
+        }
+        }
+    ]
+  }
+  
