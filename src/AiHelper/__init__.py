@@ -146,8 +146,8 @@ class AiHelper:
     def click_on_ui_element(self, element_description: str):
         built_in = BuiltIn()
         driver = built_in.get_library_instance("AppiumLibrary")._current_application()
-        from src.AiHelper.utils._screenshot import _Screenshot
-        screenshot = _Screenshot()._capture_page_screenshot(filename="omniparser_screenshot.png")
+        from src.AiHelper.common._utils import Utilities
+        screenshot = Utilities._capture_screenshot_and_reduce_size(filename="omniparser_screenshot.png")
         # screenshot_bytes = base64.b64decode(screenshot)
     
         elements = self.omniparser.parse_screenshot(screenshot)
