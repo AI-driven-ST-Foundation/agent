@@ -204,6 +204,6 @@ class OmniParser:
 #quick test
 if __name__ == "__main__":
     parser = OmniParser()
-    image_path = "/Users/abdelkaderhassine/Documents/IDFM-PRIM-VGM-SOURCE/Libraries/atest/img/screenshots/s5.jpeg"
+    image_path = "/Users/abdelkaderhassine/Documents/Libraries/atest/img/screenshots/s5.jpeg"
     elements = parser.parse_screenshot(image_path)
     print(elements)
