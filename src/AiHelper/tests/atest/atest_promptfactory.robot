@@ -1,8 +1,6 @@
 *** Settings ***
-# Library    ${EXECDIR}/Libraries/AiHelper/__init__.py
-Library    Libraries.AiHelper
+Library    src.AiHelper.AiHelper
 
-# Resource    ${EXECDIR}/PageObjects/common.resource
 Library    Collections
 *** Variables ***
 # ${system_prompt_icon_detection}=    "Tu es un expert en reconnaissance visuelle et extraction de données à partir des images"
@@ -43,7 +41,7 @@ Use Prompt Factory Keywords
     Log    ${AI_RESPONSE}
 
 
-Use Prompt Factory Keywords 
+Use Prompt Factory Keywords 2
     # ${system_prompt}=   Create System Prompt    ${system_prompt_icon_detection} 
     ${user_prompt1}=    Create User Prompt    text=${prompt_icon_detection3}    image_url=https://i.ibb.co/zV8KpdB6/infor-traffic.png
     # ${user_prompt2}=    Create User Prompt    text=prompt
@@ -51,5 +49,5 @@ Use Prompt Factory Keywords
     # ${user_prompt4}=    Create User Prompt    text=Veuillez comparer les deux images et fournir une réponse structurée au format JSON avec les champs suivants: confidence_level, confidence_explanation, test_result, bugs (avec bug_description, bug_severity, bug_screenshot_region) et suggestions
     
     ${messages}=    Create List        ${user_prompt1}    
-    ${AI_RESPONSE}=    Send AI Request    ${messages}    gpt-4o    1    8000    
+    ${AI_RESPONSE}=    Send AI Request    ${messages}    #gpt-4o    1    8000    
     Log    ${AI_RESPONSE}
