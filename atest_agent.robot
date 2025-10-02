@@ -10,10 +10,11 @@ Documentation  This will be the most high level acceptance test for the library
 
 ...  typical actions in the automation are ; click element , input text , 
 ...  page should contains text ,
+Library    AppiumLibrary
 
 *** Test Cases ***
 Test Agent
     [Documentation]   this doesn't work of cours e bcause we didn't code the 
     ...   high level keywords yet , but just as an example 
-    agent.do      click on the login button 
-    agent.check   that the homepage which contains a timeline of news is displayed 
+    Open Application        remote_url=https://hub-cloud.browserstack.com/wd/hub
+    AiHelper.

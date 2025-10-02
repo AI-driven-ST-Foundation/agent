@@ -1,0 +1,60 @@
+userName: abdelkaderhassin_zMLQxY
+accessKey: LsPb6yjmavAuoxPXj1rz
+app: bs://sample.app #bs://da313c107d086ec6b3c0054771ef46b69f85618f  
+platforms:
+  # - deviceName: Google Pixel 8
+  #   platformVersion: 14.0
+  #   platformName : Android
+  # - deviceName: Samsung Galaxy S23 Ultra
+  #   platformVersion: 13.0
+  #   platformName : Android
+  - deviceName: Samsung Galaxy S21
+    platformVersion: 12.0
+    platformName: android
+  # - deviceName: Oppo Reno 6
+  #   platformVersion: 11.0
+  #   platformName: android
+  # - deviceName: Google Pixel 7
+  #   platformVersion: 13.0
+  #   platformName : Android
+  # - platformName: ios
+  #   deviceName: iPhone 14
+  #   platformVersion: 16
+  # - platformName: ios
+  #   deviceName: iPhone 13 Pro Max
+  #   platformVersion: 15
+browserstackLocal: false # setting it false will cause "verifier la redirection to fail on browserstack"
+parallelsPerPlatform: 1
+buildName: local exec
+buildIdentifier: ${BUILD_NUMBER}
+projectName: Local Execution
+appiumVersion: 2.6.0
+
+
+debug: true
+networkLogs: false
+networkLogsOptions: 
+  captureContent: false
+networkLogsIncludeHosts:  instant-system.com
+appProfiling: false
+consoleLogs: info
+testObservability: false
+framework: robot
+locale: fr
+language: fr
+
+
+
+# Devices pour le network logs 
+# "deviceName": "oppo reno 6",
+# "udid": "CUXCZTW87PSOGEV8",
+# "deviceManufacturer": "OPPO",
+# "deviceModel": "CPH2251",
+# "platformVersion": "11.0"
+
+
+# "deviceName": "samsung galaxy s21",
+# "udid": "R5CT11JWCML",
+# "deviceManufacturer": "samsung",
+# "deviceModel": "SM-G991B",
+# "platformVersion": "12.0"

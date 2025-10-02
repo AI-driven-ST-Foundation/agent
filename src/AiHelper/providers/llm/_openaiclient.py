@@ -15,6 +15,7 @@ class OpenAIClient(BaseLLMClient):
         max_retries: int = 3,
         base_backoff: int = 2,
     ):
+        self.logger = RobotCustomLogger()
         self.api_key : str = api_key
         if not self.api_key:
             from src.AiHelper.config.config import Config
@@ -29,7 +30,6 @@ class OpenAIClient(BaseLLMClient):
         self.max_retries = max_retries
         self.base_backoff = base_backoff
         self.client = OpenAI(api_key=self.api_key)
-        self.logger = RobotCustomLogger()
 
     def create_chat_completion(
         self,
