@@ -11,10 +11,17 @@ Documentation  This will be the most high level acceptance test for the library
 ...  typical actions in the automation are ; click element , input text , 
 ...  page should contains text ,
 Library    AppiumLibrary
-
+Library    src.AiHelper.AgentKeywords
 *** Test Cases ***
 Test Agent
     [Documentation]   this doesn't work of cours e bcause we didn't code the 
     ...   high level keywords yet , but just as an example 
     Open Application        remote_url=https://hub-cloud.browserstack.com/wd/hub
-    AiHelper.
+    ${prompt}=    Set Variable    click on the button enter some value
+    ${prompt2}=    Set Variable    input this text in the texte field: hello
+    ${prompt3}=    Set Variable    click on the submit button 
+    ${prompt4}=    Set Variable    check that the text hello is displayed under the button of submit 
+    src.AiHelper.AgentKeywords.Agent Do    instruction=${prompt} 
+    src.AiHelper.AgentKeywords.Agent Do    instruction=${prompt2} 
+    src.AiHelper.AgentKeywords.Agent Do    instruction=${prompt3}
+    src.AiHelper.AgentKeywords.Agent check    instruction=${prompt4}
