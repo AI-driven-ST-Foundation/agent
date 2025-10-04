@@ -3,6 +3,7 @@ Documentation    Test Suite for Multi-Provider LLM Interface
 ...              Tests OpenAI, Anthropic, and Google Gemini providers
 ...              Verifies unified interface works across all providers
 Library          Collections
+Library          src.AiHelper.AiHelper
 
 *** Variables ***
 ${SIMPLE_PROMPT}    What is the capital of France? Answer in one short sentence.
@@ -13,8 +14,8 @@ Test Gemini Provider - Simple Request
     [Documentation]    Test Google Gemini with a simple question
     [Tags]    gemini    provider    basic
     
-    # Import library with Gemini provider
-    Import Library    src.AiHelper.AiHelper    gemini    gemini-2.5-flash
+    # Switch to Gemini provider
+    Switch Provider    gemini    gemini-2.5-flash
     
     # Create messages
     ${system_msg}=    Create Dictionary    role=system    content=${SYSTEM_MESSAGE}
@@ -39,8 +40,8 @@ Test Anthropic Provider - Simple Request
     [Documentation]    Test Anthropic Claude with a simple question
     [Tags]    anthropic    provider    basic
     
-    # Import library with Anthropic provider
-    Import Library    src.AiHelper.AiHelper    anthropic    claude-3-5-sonnet-20241022
+    # Switch to Anthropic provider
+    Switch Provider    anthropic    claude-3-5-sonnet-20241022
     
     # Create messages
     ${system_msg}=    Create Dictionary    role=system    content=${SYSTEM_MESSAGE}
@@ -65,7 +66,7 @@ Test Gemini - Complex Conversation
     [Documentation]    Test Gemini with a multi-turn conversation
     [Tags]    gemini    conversation
     
-    Import Library    src.AiHelper.AiHelper    gemini
+    Switch Provider    gemini
     
     ${system_msg}=      Create Dictionary    role=system      content=You are a calculator
     ${user_msg1}=       Create Dictionary    role=user        content=What is 5 + 3?
@@ -85,7 +86,7 @@ Test Anthropic - Complex Conversation
     [Documentation]    Test Anthropic with a multi-turn conversation
     [Tags]    anthropic    conversation
     
-    Import Library    src.AiHelper.AiHelper    anthropic
+    Switch Provider    anthropic
     
     ${system_msg}=      Create Dictionary    role=system      content=You are a calculator
     ${user_msg1}=       Create Dictionary    role=user        content=What is 5 + 3?
@@ -105,7 +106,7 @@ Test Gemini - Temperature Control
     [Documentation]    Test Gemini with different temperature settings
     [Tags]    gemini    parameters
     
-    Import Library    src.AiHelper.AiHelper    gemini
+    Switch Provider    gemini
     
     ${system_msg}=    Create Dictionary    role=system    content=You are a creative writer
     ${user_msg}=      Create Dictionary    role=user      content=Write one word that describes the color blue
@@ -121,7 +122,7 @@ Test Anthropic - Temperature Control
     [Documentation]    Test Anthropic with different temperature settings
     [Tags]    anthropic    parameters
     
-    Import Library    src.AiHelper.AiHelper    anthropic
+    Switch Provider    anthropic
     
     ${system_msg}=    Create Dictionary    role=system    content=You are a creative writer
     ${user_msg}=      Create Dictionary    role=user      content=Write one word that describes the color blue
@@ -138,12 +139,12 @@ Test Cost Tracking Across Providers
     [Tags]    cost    tracking
     
     # Reset cost counter
-    Import Library    src.AiHelper.AiHelper    gemini
+    Switch Provider    gemini
     ${initial_cost}=    Reset Cumulated Cost
     Should Be Equal As Numbers    ${initial_cost}    0
     
     # Test Gemini with longer prompt for measurable cost
-    Import Library       src.AiHelper.AiHelper    gemini
+    Switch Provider    gemini
     ${msg}=              Create Dictionary    role=user    content=Write a paragraph about artificial intelligence and its impact on society
     ${messages}=         Create List          ${msg}
     ${response1}=        Send AI Request    ${messages}
@@ -152,7 +153,7 @@ Test Cost Tracking Across Providers
     Should Be True       ${cost1} >= 0
     
     # Test Anthropic
-    Import Library       src.AiHelper.AiHelper    anthropic
+    Switch Provider    anthropic
     ${response2}=        Send AI Request    ${messages}
     ${cost2}=            Get Cumulated Cost
     Should Be True       ${cost2} >= ${cost1}
@@ -170,16 +171,16 @@ Test Provider Comparison - Same Prompt
     ${messages}=  Create List          ${user_msg}
     
     # Reset cost
-    Import Library    src.AiHelper.AiHelper    gemini
+    Switch Provider    gemini
     Reset Cumulated Cost
     
     # Test Gemini
-    Import Library    src.AiHelper.AiHelper    gemini
+    Switch Provider    gemini
     ${gemini_response}=    Send AI Request    ${messages}
     ${gemini_cost}=        Get Cumulated Cost
     
     # Test Anthropic  
-    Import Library    src.AiHelper.AiHelper    anthropic
+    Switch Provider    anthropic
     ${anthropic_response}=    Send AI Request    ${messages}
     ${anthropic_cost}=        Get Cumulated Cost
     
@@ -202,7 +203,7 @@ Test Gemini Haiku Model
     [Documentation]    Test using Anthropic's fastest/cheapest model
     [Tags]    anthropic    haiku    cheap
     
-    Import Library    src.AiHelper.AiHelper    anthropic    claude-3-haiku-20240307
+    Switch Provider    anthropic    claude-3-haiku-20240307
     
     ${user_msg}=  Create Dictionary    role=user    content=What is 2+2?
     ${messages}=  Create List          ${user_msg}
@@ -220,6 +221,182 @@ Test Error Handling - Invalid Provider
     # This should fail gracefully
     Run Keyword And Expect Error    *Unsupported LLM client*
     ...    Import Library    src.AiHelper.AiHelper    invalid_provider
+
+Test Anthropic - Image URL Support
+    [Documentation]    Test Anthropic Claude with image URL (vision API)
+    [Tags]    anthropic    vision    image
+    
+    Switch Provider    anthropic    claude-sonnet-4-5-20250929
+    
+    # Create message with image - using OpenAI-style format for compatibility
+    ${text_content}=    Create Dictionary    type=text    text=What do you see in this image? Describe it briefly.
+    ${image_url}=       Create Dictionary    url=https://upload.wikimedia.org/wikipedia/commons/a/a7/Camponotus_flavomarginatus_ant.jpg
+    ${image_content}=   Create Dictionary    type=image_url    image_url=${image_url}
+    ${content_list}=    Create List          ${text_content}    ${image_content}
+    
+    ${user_message}=    Create Dictionary    role=user    content=${content_list}
+    ${messages}=        Create List          ${user_message}
+    
+    # Send request
+    ${response}=    Send AI Request    ${messages}
+    
+    # Verify response
+    Should Not Be Empty    ${response}
+    Should Contain Any     ${response}    ant    insect    bug    Camponotus
+    
+    # Check cost tracking
+    ${cost}=    Get Cumulated Cost
+    Should Be True    ${cost} > 0
+    
+    Log    ✅ Anthropic Vision Response: ${response}
+    Log    💰 Cost: $${cost}
+
+Test Anthropic - Multiple Images
+    [Documentation]    Test Anthropic Claude with multiple images
+    [Tags]    anthropic    vision    multiple-images
+    
+    Switch Provider    anthropic    claude-sonnet-4-5-20250929
+    
+    # Create message with text and first image
+    ${text1}=           Create Dictionary    type=text    text=Image 1:
+    ${image_url1}=      Create Dictionary    url=https://upload.wikimedia.org/wikipedia/commons/a/a7/Camponotus_flavomarginatus_ant.jpg
+    ${image1}=          Create Dictionary    type=image_url    image_url=${image_url1}
+    
+    ${text2}=           Create Dictionary    type=text    text=Image 2:
+    ${image_url2}=      Create Dictionary    url=https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg
+    ${image2}=          Create Dictionary    type=image_url    image_url=${image_url2}
+    
+    ${question}=        Create Dictionary    type=text    text=What animals are shown in these two images?
+    
+    ${content_list}=    Create List    ${text1}    ${image1}    ${text2}    ${image2}    ${question}
+    
+    ${user_message}=    Create Dictionary    role=user    content=${content_list}
+    ${messages}=        Create List          ${user_message}
+    
+    # Send request
+    ${response}=    Send AI Request    ${messages}
+    
+    # Verify response mentions both animals
+    Should Not Be Empty    ${response}
+    Should Contain Any     ${response}    ant    insect
+    Should Contain Any     ${response}    cat    feline
+    
+    Log    ✅ Anthropic Multiple Images: ${response}
+
+Test Anthropic - Vision with System Prompt
+    [Documentation]    Test Anthropic vision with system prompt
+    [Tags]    anthropic    vision    system-prompt
+    
+    Switch Provider    anthropic    claude-sonnet-4-5-20250929
+    
+    # Create system message
+    ${system_msg}=      Create Dictionary    role=system    content=You are an expert biologist. Identify species in images using scientific names.
+    
+    # Create user message with image
+    ${text_content}=    Create Dictionary    type=text    text=What species is this?
+    ${image_url}=       Create Dictionary    url=https://upload.wikimedia.org/wikipedia/commons/a/a7/Camponotus_flavomarginatus_ant.jpg
+    ${image_content}=   Create Dictionary    type=image_url    image_url=${image_url}
+    ${content_list}=    Create List          ${text_content}    ${image_content}
+    
+    ${user_message}=    Create Dictionary    role=user    content=${content_list}
+    ${messages}=        Create List          ${system_msg}    ${user_message}
+    
+    # Send request
+    ${response}=    Send AI Request    ${messages}
+    
+    # Verify response
+    Should Not Be Empty    ${response}
+    Should Contain Any     ${response}    Camponotus    ant    species
+    
+    Log    ✅ Anthropic Vision with System Prompt: ${response}
+
+Test Gemini - Image URL Support
+    [Documentation]    Test Gemini with image URL (vision API)
+    [Tags]    gemini    vision    image
+    
+    Switch Provider    gemini    gemini-2.5-flash
+    
+    # Create message with image - using OpenAI-style format for compatibility
+    ${text_content}=    Create Dictionary    type=text    text=What do you see in this image? Describe it briefly.
+    ${image_url}=       Create Dictionary    url=https://upload.wikimedia.org/wikipedia/commons/a/a7/Camponotus_flavomarginatus_ant.jpg
+    ${image_content}=   Create Dictionary    type=image_url    image_url=${image_url}
+    ${content_list}=    Create List          ${text_content}    ${image_content}
+    
+    ${user_message}=    Create Dictionary    role=user    content=${content_list}
+    ${messages}=        Create List          ${user_message}
+    
+    # Send request
+    ${response}=    Send AI Request    ${messages}
+    
+    # Verify response
+    Should Not Be Empty    ${response}
+    Should Contain Any     ${response}    ant    insect    bug    Camponotus
+    
+    # Check cost tracking
+    ${cost}=    Get Cumulated Cost
+    Should Be True    ${cost} >= 0
+    
+    Log    ✅ Gemini Vision Response: ${response}
+    Log    💰 Cost: $${cost}
+
+Test Gemini - Multiple Images
+    [Documentation]    Test Gemini with multiple images
+    [Tags]    gemini    vision    multiple-images
+    
+    Switch Provider    gemini    gemini-2.5-flash
+    
+    # Create message with text and first image
+    ${text1}=           Create Dictionary    type=text    text=Image 1:
+    ${image_url1}=      Create Dictionary    url=https://upload.wikimedia.org/wikipedia/commons/a/a7/Camponotus_flavomarginatus_ant.jpg
+    ${image1}=          Create Dictionary    type=image_url    image_url=${image_url1}
+    
+    ${text2}=           Create Dictionary    type=text    text=Image 2:
+    ${image_url2}=      Create Dictionary    url=https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/1200px-Cat03.jpg
+    ${image2}=          Create Dictionary    type=image_url    image_url=${image_url2}
+    
+    ${question}=        Create Dictionary    type=text    text=What animals are shown in these two images?
+    
+    ${content_list}=    Create List    ${text1}    ${image1}    ${text2}    ${image2}    ${question}
+    
+    ${user_message}=    Create Dictionary    role=user    content=${content_list}
+    ${messages}=        Create List          ${user_message}
+    
+    # Send request
+    ${response}=    Send AI Request    ${messages}
+    
+    # Verify response mentions both animals
+    Should Not Be Empty    ${response}
+    Should Contain Any     ${response}    ant    insect
+    Should Contain Any     ${response}    cat    feline
+    
+    Log    ✅ Gemini Multiple Images: ${response}
+
+Test Gemini - Vision with System Prompt
+    [Documentation]    Test Gemini vision with system prompt
+    [Tags]    gemini    vision    system-prompt
+    
+    Switch Provider    gemini    gemini-2.5-flash
+    
+    # Create system message
+    ${system_msg}=      Create Dictionary    role=system    content=You are a helpful assistant that describes images in detail.
+    
+    # Create user message with image
+    ${text_content}=    Create Dictionary    type=text    text=What type of insect is in this image?
+    ${image_url}=       Create Dictionary    url=https://upload.wikimedia.org/wikipedia/commons/a/a7/Camponotus_flavomarginatus_ant.jpg
+    ${image_content}=   Create Dictionary    type=image_url    image_url=${image_url}
+    ${content_list}=    Create List          ${text_content}    ${image_content}
+    
+    ${user_message}=    Create Dictionary    role=user    content=${content_list}
+    ${messages}=        Create List          ${system_msg}    ${user_message}
+    
+    # Send request
+    ${response}=    Send AI Request    ${messages}
+    
+    # Verify response - accept safety filter message or valid response
+    Should Not Be Empty    ${response}
+    Should Contain Any     ${response}    ant    insect    Camponotus    blocked
+    
+    Log    ✅ Gemini Vision with System Prompt: ${response}
 
 *** Keywords ***
 Should Contain Any

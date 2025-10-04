@@ -63,9 +63,10 @@ class AnthropicClient(BaseLLMClient):
                 if msg.get("role") == "system":
                     system_message = msg.get("content")
                 else:
+                    transformed_content = self._transform_content(msg.get("content"))
                     user_messages.append({
                         "role": msg.get("role"),
-                        "content": msg.get("content")
+                        "content": transformed_content
                     })
             
             # Prepare API call parameters
@@ -75,7 +76,6 @@ class AnthropicClient(BaseLLMClient):
                 "max_tokens": max_tokens,
                 **kwargs
             }
-            
             # Only add temperature or top_p, not both (Anthropic requirement)
             if temperature != 1.0:
                 api_params["temperature"] = temperature
@@ -105,6 +105,92 @@ class AnthropicClient(BaseLLMClient):
         except Exception as e:
             self.logger.error(f"Unexpected error: {str(e)}", True)
             raise
+
+    def _transform_content(self, content):
+        """
+        Transform content to Claude's format, handling images.
+        
+        Supports:
+        - String content (passed through)
+        - List content with text and images
+        - OpenAI-style image_url format -> Claude's image format
+        - Native Claude image format (passed through)
+        
+        Args:
+            content: String or list of content items
+            
+        Returns:
+            Transformed content in Claude's format
+        """
+        # If content is a simple string, return as-is
+        if isinstance(content, str):
+            return content
+        
+        # If content is not a list, return as-is
+        if not isinstance(content, list):
+            return content
+        
+        # Transform list content
+        transformed = []
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+                
+            item_type = item.get("type")
+            
+            # Handle text content
+            if item_type == "text":
+                transformed.append({
+                    "type": "text",
+                    "text": item.get("text", "")
+                })
+            
+            # Handle OpenAI-style image_url format
+            elif item_type == "image_url":
+                image_url_data = item.get("image_url", {})
+                if isinstance(image_url_data, dict) and "url" in image_url_data:
+                    url = image_url_data["url"]
+                    
+                    # Check if it's a base64 data URL
+                    if url.startswith("data:"):
+                        # Extract media type and base64 data
+                        # Format: data:image/jpeg;base64,/9j/4AAQ...
+                        try:
+                            header, data = url.split(",", 1)
+                            media_type = header.split(";")[0].split(":")[1]
+                            transformed.append({
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": media_type,
+                                    "data": data
+                                }
+                            })
+                        except (ValueError, IndexError) as e:
+                            self.logger.error(f"Invalid base64 image URL format: {e}")
+                            continue
+                    else:
+                        # Regular URL
+                        transformed.append({
+                            "type": "image",
+                            "source": {
+                                "type": "url",
+                                "url": url
+                            }
+                        })
+            
+            # Handle native Claude image format (already correct)
+            elif item_type == "image":
+                if "source" in item:
+                    transformed.append(item)
+                else:
+                    self.logger.warning("Image item missing 'source' field")
+            
+            # Pass through any other content types
+            else:
+                transformed.append(item)
+        
+        return transformed if transformed else content
 
     def _validate_parameters(self, temperature: float, top_p: float):
         """Validate API parameters."""

@@ -1,7 +1,6 @@
 *** Settings ***
-Library    Libraries.AiHelper
+Library    src.AiHelper.AiHelper
 Library    AppiumLibrary
-Resource    ${EXECDIR}/PageObjects/common.resource
 Library    Collections
 *** Test Cases ***
 *** Settings ***
@@ -174,7 +173,7 @@ Test AI Verification 3
     ${messages}=    Create List    ${system_prompt}    ${message}
     
     # Appel avec les bons paramètres
-    ${AI_RESPONSE}=    S   
+    ${AI_RESPONSE}=    Send AI Request   
     ...    ${messages}    
     ...    model=gpt-4o-mini  # Modèle officiel pour les images
     ...    max_tokens=300

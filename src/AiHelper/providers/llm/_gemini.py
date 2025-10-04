@@ -2,6 +2,8 @@ import google.generativeai as genai
 from google.generativeai.types import GenerateContentResponse
 from typing import Optional, Dict, List, Union
 import os
+import base64
+import requests
 from src.AiHelper.common._logger import RobotCustomLogger
 from src.AiHelper.providers.llm._baseclient import BaseLLMClient
 
@@ -149,34 +151,125 @@ class GeminiClient(BaseLLMClient):
                 
                 if isinstance(content, str):
                     # Simple text message
-                    text_content = content
+                    parts.append(content)
                 elif isinstance(content, list):
                     # Complex content with text and/or images (OpenAI style)
-                    # Gemini only uses text, so extract text parts
-                    text_parts = []
-                    for item in content:
-                        if isinstance(item, dict):
-                            if item.get("type") == "text":
-                                text_parts.append(item.get("text", ""))
-                            # Skip image_url parts as Gemini handles them differently
-                            # In production, you'd need to fetch and convert images
-                        elif isinstance(item, str):
-                            text_parts.append(item)
-                    text_content = "\n".join(text_parts)
+                    parts = self._process_content_parts(content)
                 else:
-                    text_content = str(content)
+                    parts.append(str(content))
                 
                 # If there's a system message and this is the first user message, prepend it
                 if system_message and not any(m.get("role") == "user" for m in gemini_messages):
-                    text_content = f"{system_message}\n\n{text_content}"
+                    parts.insert(0, system_message)
                     system_message = None  # Only add once
                 
                 gemini_messages.append({
                     "role": "user",
-                    "parts": [text_content]
+                    "parts": parts
                 })
         
         return gemini_messages
+
+    def _process_content_parts(self, content_list: List[Dict]) -> List:
+        """
+        Process content parts and convert images to Gemini format.
+        
+        Supports:
+        - Text parts
+        - OpenAI-style image_url format (URLs and base64 data URLs)
+        - Native Gemini format
+        
+        Returns:
+            List of parts suitable for Gemini API (strings and image data)
+        """
+        parts = []
+        
+        for item in content_list:
+            if isinstance(item, str):
+                parts.append(item)
+                continue
+                
+            if not isinstance(item, dict):
+                continue
+            
+            item_type = item.get("type")
+            
+            # Handle text content
+            if item_type == "text":
+                text = item.get("text", "")
+                if text:
+                    parts.append(text)
+            
+            # Handle OpenAI-style image_url format
+            elif item_type == "image_url":
+                image_data = self._process_image_url(item.get("image_url", {}))
+                if image_data:
+                    parts.append(image_data)
+            
+            # Handle native Gemini image format (if provided)
+            elif item_type == "image":
+                # Native Gemini format with inline_data
+                if "inline_data" in item:
+                    parts.append(item)
+        
+        return parts
+
+    def _process_image_url(self, image_url_data: Dict) -> Optional[Dict]:
+        """
+        Process image URL and convert to Gemini format.
+        
+        Handles:
+        - Regular URLs (fetches and converts to base64)
+        - Base64 data URLs (extracts and converts)
+        
+        Returns:
+            Dict with inline_data in Gemini format, or None if error
+        """
+        if not isinstance(image_url_data, dict):
+            return None
+        
+        url = image_url_data.get("url", "")
+        if not url:
+            return None
+        
+        try:
+            # Check if it's a base64 data URL
+            if url.startswith("data:"):
+                # Format: data:image/jpeg;base64,/9j/4AAQ...
+                header, data = url.split(",", 1)
+                media_type = header.split(";")[0].split(":")[1]
+                
+                # Gemini expects inline_data format
+                return {
+                    "inline_data": {
+                        "mime_type": media_type,
+                        "data": data
+                    }
+                }
+            else:
+                # Regular URL - fetch the image
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                }
+                response = requests.get(url, headers=headers, timeout=10)
+                response.raise_for_status()
+                
+                # Determine MIME type from response headers
+                mime_type = response.headers.get("content-type", "image/jpeg")
+                
+                # Convert to base64
+                image_base64 = base64.b64encode(response.content).decode('utf-8')
+                
+                return {
+                    "inline_data": {
+                        "mime_type": mime_type,
+                        "data": image_base64
+                    }
+                }
+                
+        except Exception as e:
+            self.logger.error(f"Error processing image URL: {e}", True)
+            return None
 
     def _validate_parameters(self, temperature: float, top_p: float):
         """Validate API parameters."""
@@ -208,12 +301,26 @@ class GeminiClient(BaseLLMClient):
             self.logger.error(f"Invalid response or no candidates in the response", True)
             return {}
         
+        # Check finish reason first
+        finish_reason = response.candidates[0].finish_reason
+        finish_reason_name = str(finish_reason)
+        
         # Extract text from the first candidate
         try:
             content_text = response.text
         except Exception as e:
-            self.logger.error(f"Error extracting text from response: {e}", True)
-            content_text = ""
+            # Handle safety filters and other issues
+            self.logger.warning(f"Cannot extract text from response: {e}", True)
+            
+            # Check if it was blocked by safety filters
+            if finish_reason == 2:  # SAFETY
+                content_text = "[Content blocked by safety filters]"
+                self.logger.warning("Response blocked by Gemini safety filters", True)
+            elif finish_reason == 3:  # RECITATION
+                content_text = "[Content blocked by recitation filter]"
+                self.logger.warning("Response blocked by recitation filter", True)
+            else:
+                content_text = f"[No content available - finish_reason: {finish_reason_name}]"
         
         result = {
             "content": content_text,
@@ -232,9 +339,8 @@ class GeminiClient(BaseLLMClient):
             })
         
         if include_reason and response.candidates:
-            finish_reason = response.candidates[0].finish_reason
-            self.logger.info(f"Finish reason: {finish_reason}")
-            result["finish_reason"] = str(finish_reason)
+            self.logger.info(f"Finish reason: {finish_reason_name}")
+            result["finish_reason"] = finish_reason_name
             
         return result
 
