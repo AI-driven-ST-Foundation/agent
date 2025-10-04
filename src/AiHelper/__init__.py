@@ -9,7 +9,8 @@ from src.AiHelper.config.config import Config
 from robot.api.deco import keyword
 from src.AiHelper.providers.imguploader.imghandler import ImageUploader
 from src.AiHelper.common._logger import RobotCustomLogger
-from src.AiHelper.common._utils import Utilities
+from src.AiHelper.common.platforms.appium._service import AppiumService
+from src.AiHelper.common._jsonutils import extract_json_safely
 from src.AiHelper.common._tiktoken import TokenHelper
 from src.AiHelper.providers.promptfactory import ChatPromptFactory
 from appium.webdriver.common.appiumby import AppiumBy
@@ -85,7 +86,7 @@ class AiHelper:
     
     @keyword("Get Current UI XML")
     def get_current_ui_xml(self):
-        return Utilities._get_ui_xml()
+        return AppiumService().get_ui_xml()
 
     @keyword("Upload Screenshot File")
     def upload_screenshot_file(self, file_path: str):
@@ -98,17 +99,20 @@ class AiHelper:
     @keyword("Take Screenshot As Base64")
     def take_screenshot_as_base64(self, log: bool = True, width: int = 200):
         """ returns the screenshot as base64. does not log the screenshot if log is False (true by default)"""
-        screenshot_base64 = Utilities._take_screenshot_as_base64()
+        service = AppiumService()
+        screenshot_base64 = service.get_screenshot_base64()
         if log:
-            Utilities._embed_image_to_log(screenshot_base64, width=width)
+            service.embed_image_to_log(screenshot_base64, width=width)
         return screenshot_base64
 
     @keyword("Encode Image To Base64")
     def encode_image_to_base64(self, file_path: str, log_image: bool = False, width: int = 200):
         """ returns the image as base64. does not log the image if log is False (false by default)"""
-        base64_data = Utilities.encode_image_to_base64(file_path)
+        import base64
+        with open(file_path, "rb") as image_file:
+            base64_data = base64.b64encode(image_file.read()).decode('utf-8')
         if log_image:
-            Utilities._embed_image_to_log(base64_data, width=width)
+            AppiumService().embed_image_to_log(base64_data, width=width)
         return base64_data
     
     @keyword("Create System Prompt")
@@ -146,8 +150,18 @@ class AiHelper:
     def click_on_ui_element(self, element_description: str):
         built_in = BuiltIn()
         driver = built_in.get_library_instance("AppiumLibrary")._current_application()
-        from src.AiHelper.common._utils import Utilities
-        screenshot = Utilities._capture_screenshot_and_reduce_size(filename="omniparser_screenshot.png")
+        service = AppiumService()
+        service.save_reduced_screenshot(output_filename="omniparser_screenshot.png")
+        # Re-open reduced image as base64 for omniparser
+        import base64, os
+        variables = BuiltIn().get_variables()
+        outputdir = variables.get('${OUTPUTDIR}', '.')
+        reduced_screenshot_path = f"{outputdir}/reduced_screenshot.png"
+        if not os.path.exists(reduced_screenshot_path):
+            # fallback to default path used in service
+            reduced_screenshot_path = f"{outputdir}/omniparser_screenshot.png"
+        with open(reduced_screenshot_path, 'rb') as f:
+            screenshot = base64.b64encode(f.read()).decode('utf-8')
         # screenshot_bytes = base64.b64decode(screenshot)
     
         elements = self.omniparser.parse_screenshot(screenshot)
@@ -164,7 +178,7 @@ class AiHelper:
         user_prompt2= self.prompt.create_user_prompt(f"element description : ${element_description}")
         messages = [user_prompt, user_prompt2, user_prompt3]
         response = self.send_ai_request(messages)
-        bbox = Utilities.extract_json_safely(response)
+        bbox = extract_json_safely(response)
         self.logger.info("bbox is : " + str(bbox['bbox']), True)
         self.logger.info("explanation is : " + bbox['explanation'], True)
         bbox: list[float] = bbox['bbox']
@@ -306,7 +320,7 @@ class AiHelper:
         self.logger.info(f"Messages: {messages}")
         response = self.send_ai_request(messages)
         self.logger.info(f"Response: {response}")
-        response_json = Utilities.extract_json_safely(response)
+        response_json = extract_json_safely(response)
         self.logger.info(f"""\n Verification prompt was : {verification_prompt} ;
                              \nConfidence: {response_json['confidence']} ;
                              \nReason: {response_json['reason']} ;
@@ -366,7 +380,7 @@ class AiHelper:
         response = self.send_ai_request(messages)
         self.logger.info(f"Response: {response}")
 
-        response_json = Utilities.extract_json_safely(response)
+        response_json = extract_json_safely(response)
         self.logger.info(f"""\n element description was : {element_description} ;
                              \nLocator: {response_json['locator']} ;
                              \nReason: {response_json['reason']} ;
@@ -428,7 +442,7 @@ class AiHelper:
         response = self.send_ai_request(messages)
         self.logger.info(f"Response: {response}")
 
-        response_json = Utilities.extract_json_safely(response)
+        response_json = extract_json_safely(response)
         self.logger.info(f"""\n element description was : {element_description} ;
                              \nLocator: {response_json['locator']} ;
                              \nReason: {response_json['reason']} ;
