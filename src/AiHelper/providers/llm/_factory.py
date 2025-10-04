@@ -4,7 +4,7 @@ from src.AiHelper.providers.llm._openaiclient import OpenAIClient
 from src.AiHelper.providers.llm._anthropic import AnthropicClient
 from src.AiHelper.providers.llm._gemini import GeminiClient
 from src.AiHelper.config.model_config import ModelConfig
-
+from src.AiHelper.config.config import Config
 
 class LLMClientFactory:
     """
@@ -39,19 +39,20 @@ class LLMClientFactory:
             ValueError: If the client_name is not supported
         """
         client_name_lower = client_name.lower()
+        config = Config()
         
         # Use default model if not specified
         if model is None:
             model = LLMClientFactory.DEFAULT_MODELS.get(client_name_lower)
         
         if client_name_lower == "openai":
-            api_key = os.getenv("OPENAI_API_KEY")
+            api_key = config.OPENAI_API_KEY
             return OpenAIClient(model=model, api_key=api_key)
         elif client_name_lower == "anthropic" or client_name_lower == "claude":
-            api_key = os.getenv("ANTHROPIC_API_KEY")
+            api_key = config.ANTHROPIC_API_KEY
             return AnthropicClient(model=model, api_key=api_key)
         elif client_name_lower == "gemini" or client_name_lower == "google":
-            api_key = os.getenv("GEMINI_API_KEY")
+            api_key = config.GEMINI_API_KEY
             return GeminiClient(model=model)
         
         # Future implementations
