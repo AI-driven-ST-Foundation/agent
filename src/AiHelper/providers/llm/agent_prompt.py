@@ -143,17 +143,25 @@ class AgentPromptComposer:
         self.catalog = AgentKeywordCatalog()
 
     def _render_ui_candidates(self, ui_elements: Optional[List[Dict[str, Any]]]) -> str:
-        if not ui_elements:
-            return "(aucun contexte UI fourni)"
+        if not ui_elements or len(ui_elements) == 0:
+            return "(aucun élément UI interactif trouvé - vérifiez que l'app est bien ouverte)"
         rendered: List[str] = []
-        for element in ui_elements[:30]:
+        for i, element in enumerate(ui_elements[:30], 1):
             text = element.get("text") or ""
-            res_id = element.get("resource_id") or element.get("id") or ""
-            desc = element.get("content_desc") or element.get("contentDescription") or ""
-            clazz = element.get("class") or element.get("class_name") or ""
-            rendered.append(
-                f"text='{text}' | id='{res_id}' | desc='{desc}' | class='{clazz}'"
-            )
+            res_id = element.get("resource_id") or ""
+            desc = element.get("content_desc") or ""
+            clazz = element.get("class_name") or ""
+            bounds = element.get("bounds") or ""
+
+            # Construire une description complète de l'élément
+            parts = []
+            if text: parts.append(f"text='{text}'")
+            if res_id: parts.append(f"id='{res_id}'")
+            if desc: parts.append(f"desc='{desc}'")
+            if clazz: parts.append(f"class='{clazz}'")
+
+            description = " | ".join(parts) if parts else f"class='{clazz}'"
+            rendered.append(f"{i}. {description}")
         return "\n".join(rendered)
 
     def get_do_output_schema(self) -> Dict[str, Any]:
@@ -237,6 +245,11 @@ class AgentPromptComposer:
             "en respectant strictement le schéma JSON de sortie. "
             "Aucun raisonnement étape-par-étape, seulement la réponse JSON.\n\n"
             f"{catalog_text}\n\n"
+            "INSTRUCTIONS CRITIQUES:\n"
+            "- PRIORISEZ TOUJOURS la stratégie 'xpath' quand elle est disponible dans le contexte UI\n"
+            "- Utilisez 'xpath' pour une localisation précise et fiable\n"
+            "- Évitez 'class_name' générique comme 'button' qui ne trouve rien\n"
+            "- Choisissez le premier élément qui correspond à l'instruction\n\n"
             "Contraintes: une seule action, pas de tentative multiple. "
             "Si l'écran ne permet pas l'action demandée, choisissez le meilleur locator selon le contexte UI."
         )
@@ -249,6 +262,11 @@ class AgentPromptComposer:
             "en respectant strictement le schéma JSON de sortie. "
             "Aucun raisonnement étape-par-étape, seulement la réponse JSON.\n\n"
             f"{catalog_text}\n\n"
+            "INSTRUCTIONS CRITIQUES:\n"
+            "- PRIORISEZ TOUJOURS la stratégie 'xpath' quand elle est disponible dans le contexte UI\n"
+            "- Utilisez 'xpath' pour une localisation précise et fiable\n"
+            "- Évitez les stratégies génériques qui ne trouvent rien\n"
+            "- Choisissez le premier élément qui correspond à l'instruction\n\n"
             "Contraintes: une seule assertion. "
             "Si l'information n'est pas certaine, choisissez l'assertion la plus précise possible."
         )

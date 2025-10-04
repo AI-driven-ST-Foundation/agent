@@ -1,5 +1,5 @@
 from src.AiHelper.common._logger import RobotCustomLogger
-from src.AiHelper.common._utils import Utilities
+from src.AiHelper.common.platforms.appium._service import AppiumService
 from src.AiHelper.providers.imguploader.imghandler import ImageUploader
 
 class ChatPromptFactory:
@@ -7,6 +7,7 @@ class ChatPromptFactory:
     def __init__(self):
         self.logger = RobotCustomLogger()
         self.img_uploader = ImageUploader()
+        self._appium = AppiumService()
 
     def create_system_prompt(self,system_prompt: str) -> dict:
         self.logger.info(f"From ChatPromptFactory: Creating system prompt: {system_prompt}")
@@ -39,15 +40,15 @@ class ChatPromptFactory:
     
     def create_user_prompt_sending_current_screenshot(self,text: str, log_image: bool = False, width: int = 200) -> dict:
         self.logger.info(f"From ChatPromptFactory: Creating current screenshot prompt: {text}")
-        screenshot_base64 = Utilities._take_screenshot_as_base64()
+        screenshot_base64 = self._appium.get_screenshot_base64()
         screenshot_url = self.img_uploader.upload_from_base64(screenshot_base64)
         if log_image:
-            Utilities._embed_image_to_log(screenshot_base64, width=width, message="Actual app screenshot")
+            self._appium.embed_image_to_log(screenshot_base64, width=width, message="Actual app screenshot")
         return self.create_user_prompt(text, screenshot_url)
     
     def create_user_prompt_sending_current_UI_XML(self,text: str) -> dict:
         self.logger.info(f"From ChatPromptFactory: Sending current UI XML prompt: {text}")
-        current_ui_xml = Utilities._get_ui_xml()
+        current_ui_xml = self._appium.get_ui_xml()
         text= text + "\n\n" + current_ui_xml
         return self.create_user_prompt(text)
     
@@ -58,5 +59,9 @@ class ChatPromptFactory:
                              f" Reference screenshot uploaded: {image_url}")
 
         if log_image:
-            Utilities._embed_image_to_log(Utilities.encode_image_to_base64(image_path), width=width, message="Reference screenshot")
+            # Keep file encoding via utilities-free path: reuse uploader input file for logging
+            import base64
+            with open(image_path, "rb") as f:
+                base64_data = base64.b64encode(f.read()).decode('utf-8')
+            self._appium.embed_image_to_log(base64_data, width=width, message="Reference screenshot")
         return self.create_user_prompt(text, image_url)
