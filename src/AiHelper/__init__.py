@@ -26,9 +26,18 @@ class AiHelper:
     def __init__(self, client_name=None, model=None):
         self.config = Config()
         client_name = client_name or self.config.DEFAULT_LLM_CLIENT
-        model = model or self.config.DEFAULT_OPENAI_MODEL
-        api_key_openai = self.config.OPENAI_API_KEY
-        self._client = LLMClientFactory.create_client(client_name,api_key_openai, model)
+        
+        # Select appropriate default model based on provider
+        if model is None:
+            if client_name == "gemini" or (client_name is None and self.config.DEFAULT_LLM_CLIENT == "gemini"):
+                model = self.config.DEFAULT_GEMINI_MODEL
+            elif client_name == "anthropic" or (client_name is None and self.config.DEFAULT_LLM_CLIENT == "anthropic"):
+                model = self.config.DEFAULT_ANTHROPIC_MODEL
+            else:
+                model = self.config.DEFAULT_OPENAI_MODEL
+        
+        # Get API key - pass None and let the factory handle it
+        self._client = LLMClientFactory.create_client(client_name, model=model)
         self._last_response = None
         self.img = ImageUploader()
         self.logger = RobotCustomLogger()
