@@ -97,9 +97,11 @@ class RobotCustomLogger:
         self.ensure_handler()
         icon = self._icons.get(level, '')
         full_message = f"{icon} {message}" if icon else message
-        
-        getattr(self.logger, level)(full_message)
-        
+
+        # Map 'success' to 'info' for standard Python logger
+        log_level = level if level != 'success' else 'info'
+        getattr(self.logger, log_level)(full_message)
+
         if robot_log:
             self._robot_console_log(level, message)
 
