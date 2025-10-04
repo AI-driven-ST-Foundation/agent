@@ -6,6 +6,7 @@ from typing import List, Dict, Tuple, Any
 from dataclasses import dataclass
 import warnings
 from src.AiHelper.common._logger import RobotCustomLogger
+from src.AiHelper.config.model_config import ModelConfig
 
 @dataclass
 class TokenStats:
@@ -23,31 +24,16 @@ class TokenHelper:
     _instance = None
     _initialized = False
     
-    # to be updated later 
-    # add deepseek : prix / 7
-    PRICING = {
-        "gpt-3.5-turbo": {"input": 0.0005, "output": 0.0015},
-        "gpt-4o": {"input": 0.005, "output": 0.015},  # 
-        "gpt-4-turbo": {"input": 0.01, "output": 0.03},
-        "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},  # testé pour les vérifs (15/M input, 60/M output) (x10 moins cher que 4-0)
-        "deepseek-r1": {"input": 0.0002, "output": 0.0008},  # (x7 moins cher)
-        "deepseek-v3": {"input": 0.00025, "output": 0.001},  # (x7 moins cher)
-        "qwen-max": {"input": 0.0016, "output": 0.0064},
-        "qwen-plus": {"input": 0.0004, "output": 0.0012},
-        "qwen-turbo": {"input": 0.00005, "output": 0.0002}
-    }
+    # Load configuration from JSON file
+    _model_config = ModelConfig()
+    
+    # Pricing per 1000 tokens (input/output) in USD
+    # Loaded from llm_models.json configuration file
+    PRICING = _model_config.get_pricing_dict()
 
-    MAX_CONTEXT_TOKENS = {
-        "gpt-3.5-turbo": 4096,
-        "gpt-4o": 131072,
-        "gpt-4-turbo": 131072,
-        "gpt-4o-mini": 131072,
-        "deepseek-r1": 65536,
-        "deepseek-v3": 65536,
-        "qwen-max": 131072,
-        "qwen-plus": 131072,
-        "qwen-turbo": 1000000
-        }
+    # Maximum context tokens per model
+    # Loaded from llm_models.json configuration file
+    MAX_CONTEXT_TOKENS = _model_config.get_max_context_dict()
     
     def __new__(cls, model_name: str = "gpt-4o-mini"):
         if cls._instance is None:
