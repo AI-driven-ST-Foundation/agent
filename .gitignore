@@ -2,10 +2,13 @@
 __pycache__/
 *.py[codz]
 *$py.class
-
+# Robot Framework Artifacts
+pabot_results/
+*.html
+*.xml
+*.log
 # C extensions
 *.so
-
 # Distribution / packaging
 .Python
 build/
@@ -205,3 +208,4 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+.env
