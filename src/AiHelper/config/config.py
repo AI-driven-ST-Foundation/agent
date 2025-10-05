@@ -28,6 +28,10 @@ class Config:
     DEFAULT_ANTHROPIC_MODEL = os.getenv("DEFAULT_ANTHROPIC_MODEL") or _model_config.get_provider_default_model("anthropic")
     DEFAULT_GEMINI_MODEL = os.getenv("DEFAULT_GEMINI_MODEL") or _model_config.get_provider_default_model("gemini")
     DEFAULT_DEEPSEEK_MODEL = os.getenv("DEFAULT_DEEPSEEK_MODEL") or _model_config.get_provider_default_model("deepseek")
+    DEFAULT_OLLAMA_MODEL = os.getenv("DEFAULT_OLLAMA_MODEL") or _model_config.get_provider_default_model("ollama")
+    
+    # Ollama Configuration (local server)
+    OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
     
     # Image Upload Provider API Keys
     IMGBB_API_KEY = os.getenv("IMGBB_API_KEY", "")

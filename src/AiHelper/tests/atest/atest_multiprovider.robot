@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Test Suite for Multi-Provider LLM Interface
-...              Tests OpenAI, Anthropic, Google Gemini, and DeepSeek providers
+...              Tests OpenAI, Anthropic, Google Gemini, DeepSeek, and Ollama (local) providers
 ...              Verifies unified interface works across all providers
 Library          Collections
 Library          src.AiHelper.AiHelper
@@ -194,6 +194,66 @@ Test DeepSeek R1 Model
     Should Contain Any     ${response}    4    four
     
     Log    ✅ DeepSeek R1 Response: ${response}
+
+Test Ollama Provider - Simple Request
+    [Documentation]    Test Ollama with local Llama model
+    [Tags]    ollama    provider    basic    local
+    
+    # Switch to Ollama provider (local)
+    Reset Cumulated Cost
+    Switch Provider    ollama    llama3.2
+    
+    # Create messages
+    ${system_msg}=    Create Dictionary    role=system    content=${SYSTEM_MESSAGE}
+    ${user_msg}=      Create Dictionary    role=user      content=${SIMPLE_PROMPT}
+    ${messages}=      Create List          ${system_msg}  ${user_msg}
+    
+    # Send request to local model
+    ${response}=    Send AI Request    ${messages}
+    
+    # Verify response
+    Should Not Be Empty    ${response}
+    Should Contain         ${response}    Paris
+    
+    Log    ✅ Ollama Response: ${response}
+
+Test Ollama - Complex Conversation
+    [Documentation]    Test Ollama with multi-turn conversation
+    [Tags]    ollama    conversation    local
+    
+    Switch Provider    ollama    llama3.2
+    
+    ${system_msg}=      Create Dictionary    role=system      content=You are a calculator
+    ${user_msg1}=       Create Dictionary    role=user        content=What is 5 + 3?
+    ${assistant_msg}=   Create Dictionary    role=assistant   content=5 + 3 equals 8
+    ${user_msg2}=       Create Dictionary    role=user        content=Now multiply that by 2
+    
+    ${messages}=        Create List    ${system_msg}    ${user_msg1}    ${assistant_msg}    ${user_msg2}
+    
+    ${response}=    Send AI Request    ${messages}
+    
+    Should Not Be Empty    ${response}
+    Should Contain Any     ${response}    16    sixteen
+    
+    Log    ✅ Ollama Conversation: ${response}
+
+Test Ollama - Different Models
+    [Documentation]    Test switching between different local models
+    [Tags]    ollama    models    local
+    
+    # Test with Llama 3.2
+    Switch Provider    ollama    llama3.2
+    ${user_msg}=  Create Dictionary    role=user    content=Say hello in one word
+    ${messages}=  Create List          ${user_msg}
+    ${response1}=    Send AI Request    ${messages}
+    Should Not Be Empty    ${response1}
+    Log    ✅ Llama 3.2: ${response1}
+    
+    # Test with Mistral (if available)
+    Switch Provider    ollama    mistral
+    ${response2}=    Send AI Request    ${messages}
+    Should Not Be Empty    ${response2}
+    Log    ✅ Mistral: ${response2}
 
 Test Cost Tracking Across Providers
     [Documentation]    Verify cost tracking accumulates across different providers

@@ -4,13 +4,13 @@ from src.AiHelper.providers.llm._openaiclient import OpenAIClient
 from src.AiHelper.providers.llm._anthropic import AnthropicClient
 from src.AiHelper.providers.llm._gemini import GeminiClient
 from src.AiHelper.providers.llm._deepseek import DeepSeekClient
+from src.AiHelper.providers.llm._ollama import OllamaClient
 from src.AiHelper.config.model_config import ModelConfig
 from src.AiHelper.config.config import Config
 
 class LLMClientFactory:
     """
     Factory class to create and return LLM client instances.
-    Supports multiple providers: OpenAI, Anthropic (Claude), Google Gemini, and DeepSeek.
     """
     
     # Load default models from configuration file
@@ -20,6 +20,7 @@ class LLMClientFactory:
         "anthropic": _model_config.get_provider_default_model("anthropic"),
         "gemini": _model_config.get_provider_default_model("gemini"),
         "deepseek": _model_config.get_provider_default_model("deepseek"),
+        "ollama": _model_config.get_provider_default_model("ollama"),
     }
     
     @staticmethod
@@ -31,7 +32,7 @@ class LLMClientFactory:
         Create and return an LLM client instance.
         
         Args:
-            client_name: Name of the provider ('openai', 'anthropic', 'gemini', 'deepseek')
+            client_name: Name of the provider ('openai', 'anthropic', 'gemini', 'deepseek', 'ollama')
             model: Model name to use (if None, uses default for the provider)
             
         Returns:
@@ -59,6 +60,9 @@ class LLMClientFactory:
         elif client_name_lower == "deepseek":
             api_key = config.DEEPSEEK_API_KEY
             return DeepSeekClient(model=model, api_key=api_key)
+        elif client_name_lower == "ollama":
+            base_url = config.OLLAMA_BASE_URL
+            return OllamaClient(model=model, base_url=base_url)
         
         # Future implementations
         elif client_name_lower == "huggingface":
