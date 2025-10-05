@@ -1,6 +1,6 @@
 *** Settings ***
 Documentation    Test Suite for Multi-Provider LLM Interface
-...              Tests OpenAI, Anthropic, and Google Gemini providers
+...              Tests OpenAI, Anthropic, Google Gemini, and DeepSeek providers
 ...              Verifies unified interface works across all providers
 Library          Collections
 Library          src.AiHelper.AiHelper
@@ -134,6 +134,67 @@ Test Anthropic - Temperature Control
     
     Log    ✅ Anthropic Low Temp: ${response1}
 
+Test DeepSeek Provider - Simple Request
+    [Documentation]    Test DeepSeek with a simple question
+    [Tags]    deepseek    provider    basic
+    
+    # Switch to DeepSeek provider
+    Switch Provider    deepseek    deepseek-chat
+    
+    # Create messages
+    ${system_msg}=    Create Dictionary    role=system    content=${SYSTEM_MESSAGE}
+    ${user_msg}=      Create Dictionary    role=user      content=${SIMPLE_PROMPT}
+    ${messages}=      Create List          ${system_msg}  ${user_msg}
+    
+    # Send request
+    ${response}=    Send AI Request    ${messages}
+    
+    # Verify response
+    Should Not Be Empty    ${response}
+    Should Contain         ${response}    Paris
+    
+    # Check cost tracking
+    ${cost}=    Get Cumulated Cost
+    Should Be True    ${cost} > 0
+    
+    Log    ✅ DeepSeek Response: ${response}
+    Log    💰 Cost: $${cost}
+
+Test DeepSeek - Complex Conversation
+    [Documentation]    Test DeepSeek with a multi-turn conversation
+    [Tags]    deepseek    conversation
+    
+    Switch Provider    deepseek
+    
+    ${system_msg}=      Create Dictionary    role=system      content=You are a calculator
+    ${user_msg1}=       Create Dictionary    role=user        content=What is 5 + 3?
+    ${assistant_msg}=   Create Dictionary    role=assistant   content=5 + 3 equals 8
+    ${user_msg2}=       Create Dictionary    role=user        content=Now multiply that by 2
+    
+    ${messages}=        Create List    ${system_msg}    ${user_msg1}    ${assistant_msg}    ${user_msg2}
+    
+    ${response}=    Send AI Request    ${messages}
+    
+    Should Not Be Empty    ${response}
+    Should Contain Any     ${response}    16    sixteen
+    
+    Log    ✅ DeepSeek Conversation: ${response}
+
+Test DeepSeek R1 Model
+    [Documentation]    Test using DeepSeek R1 reasoning model
+    [Tags]    deepseek    r1    reasoning
+    
+    Switch Provider    deepseek    deepseek-reasoner
+    
+    ${user_msg}=  Create Dictionary    role=user    content=What is 2+2? Explain your reasoning.
+    ${messages}=  Create List          ${user_msg}
+    
+    ${response}=    Send AI Request    ${messages}
+    Should Not Be Empty    ${response}
+    Should Contain Any     ${response}    4    four
+    
+    Log    ✅ DeepSeek R1 Response: ${response}
+
 Test Cost Tracking Across Providers
     [Documentation]    Verify cost tracking accumulates across different providers
     [Tags]    cost    tracking
@@ -158,8 +219,15 @@ Test Cost Tracking Across Providers
     ${cost2}=            Get Cumulated Cost
     Should Be True       ${cost2} >= ${cost1}
     
+    # Test DeepSeek
+    Switch Provider    deepseek
+    ${response3}=        Send AI Request    ${messages}
+    ${cost3}=            Get Cumulated Cost
+    Should Be True       ${cost3} >= ${cost2}
+    
     Log    Gemini cost: $${cost1}
     Log    Total cost after Anthropic: $${cost2}
+    Log    Total cost after DeepSeek: $${cost3}
     Log    Cost tracking works across providers!
 
 Test Provider Comparison - Same Prompt
@@ -184,9 +252,15 @@ Test Provider Comparison - Same Prompt
     ${anthropic_response}=    Send AI Request    ${messages}
     ${anthropic_cost}=        Get Cumulated Cost
     
+    # Test DeepSeek
+    Switch Provider    deepseek
+    ${deepseek_response}=    Send AI Request    ${messages}
+    ${deepseek_cost}=        Get Cumulated Cost
+    
     # Verify all responded
     Should Not Be Empty    ${gemini_response}
     Should Not Be Empty    ${anthropic_response}
+    Should Not Be Empty    ${deepseek_response}
     
     # Log comparison
     Log    ============================================================
@@ -194,9 +268,11 @@ Test Provider Comparison - Same Prompt
     Log    ============================================================
     Log    Prompt: ${prompt}
     Log    Gemini Response: ${gemini_response}
-    Log    Cost: $${gemini_cost}
+    Log    Gemini Cost: $${gemini_cost}
     Log    Anthropic Response: ${anthropic_response}
-    Log    Total Cost: $${anthropic_cost}
+    Log    Anthropic Cost: $${anthropic_cost}
+    Log    DeepSeek Response: ${deepseek_response}
+    Log    Total Cost: $${deepseek_cost}
     Log    ============================================================
 
 Test Gemini Haiku Model

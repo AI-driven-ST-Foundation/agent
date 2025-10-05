@@ -11,6 +11,10 @@
     "gemini": {
       "name": "Google Gemini",
       "default_model": "gemini-2.5-flash"
+    },
+    "deepseek": {
+      "name": "DeepSeek",
+      "default_model": "deepseek-chat"
     }
   },
   "models": {
@@ -195,6 +199,16 @@
       },
       "max_context_tokens": 32768,
       "notes": "Legacy model"
+    },
+    "deepseek-chat": {
+      "provider": "deepseek",
+      "display_name": "DeepSeek Chat",
+      "pricing": {
+        "input": 0.00014,
+        "output": 0.00028
+      },
+      "max_context_tokens": 65536,
+      "notes": "Default DeepSeek model via Anthropic API compatibility"
     },
     "deepseek-r1": {
       "provider": "deepseek",
