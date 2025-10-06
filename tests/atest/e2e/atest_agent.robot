@@ -1,21 +1,14 @@
 *** Settings ***
-Documentation  This will be the most high level acceptance test for the library 
-...   the library will contains methods like do / check / analyse  ... 
-...   each method will collect some mobile app evidence like XML hierarchy and screenshot
-...   send them to the LLM to get a response
-...   in a more low level of acceptance test we can test that request to the ai
-...    and see how it works with different models and different requests 
+Documentation   To run the test on browserstack, need to have browserstack.yml file 
+...    and browserstack-sdk installed 
+...    then run the test with the command :
+...    browserstack-sdk robot tests/atest/e2e/atest_agent.robot
 ...    
-
-
-...  typical actions in the automation are ; click element , input text , 
-...  page should contains text ,
+...    this test run on the sample app at tests/atest/sample_app.apk
 Library    AppiumLibrary
 Library    src.AiHelper.AgentKeywords
 *** Test Cases ***
 Test Agent
-    [Documentation]   this doesn't work of cours e bcause we didn't code the 
-    ...   high level keywords yet , but just as an example 
     Open Application        remote_url=https://hub-cloud.browserstack.com/wd/hub
     ${prompt}=    Set Variable    click on the button enter some value
     ${prompt2}=    Set Variable    input this text in the texte field: hello

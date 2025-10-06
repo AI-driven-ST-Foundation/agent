@@ -1,7 +1,6 @@
 *** Settings ***
-Library    Libraries.AiHelper
+Library    src.AiHelper.AiHelper
 Library    AppiumLibrary
-Resource    ${EXECDIR}/PageObjects/common.resource
 Library    Collections
 *** Test Cases ***
 *** Settings ***
@@ -67,10 +66,7 @@ Send AI Request
     ${user_prompt}=    Create Dictionary    role=user    content=What is the capital of France?
 
     ${content_list}=    Create List    ${user_prompt}
-
     ${user_prompt}=    Create Dictionary    role=user    content=${content_list}
-
-
     @{messages}=    Create List    ${system_prompt}    ${user_prompt}
 
 
@@ -174,7 +170,7 @@ Test AI Verification 3
     ${messages}=    Create List    ${system_prompt}    ${message}
     
     # Appel avec les bons paramètres
-    ${AI_RESPONSE}=    S   
+    ${AI_RESPONSE}=    Send AI Request   
     ...    ${messages}    
     ...    model=gpt-4o-mini  # Modèle officiel pour les images
     ...    max_tokens=300
