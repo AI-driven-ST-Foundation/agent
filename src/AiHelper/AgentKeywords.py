@@ -9,10 +9,13 @@ class AgentKeywords:
     """
     Robot Framework library exposing two high-level keywords:
     - Agent.Do <instruction>
-    - Agent.Check <instruction>
+    - Agent.VisualCheck <instruction>
 
-    Each keyword captures current UI context, composes a strict JSON prompt,
+    Agent.Do captures current UI context, composes a strict JSON prompt,
     calls the LLM with temperature=0, and executes the mapped AppiumLibrary action.
+    
+    Agent.VisualCheck captures a screenshot, sends it to AI for visual analysis,
+    and provides detailed verification results with confidence scores.
     """
 
     ROBOT_LIBRARY_SCOPE = "GLOBAL"
@@ -29,9 +32,17 @@ class AgentKeywords:
         self.engine.do(instruction)
 
     def agent_check(self, instruction: str):
-        """Agent.Check <instruction>
-        Example: Agent.Check    l'écran affiche bien la carte
+        """Agent.VisualCheck <instruction>
+        Example: Agent.VisualCheck    vérifier que l'écran affiche le logo de l'application
         """
-        self.engine.check(instruction)
+        self.engine.visual_check(instruction)
 
 
+    def agent_autonumous(self, instruction: str):
+        """Agent.Autonumous <instruction>
+        This keyword is designed to autonomously plan and execute a test based on the 
+        given single instruction.
+
+        Example: Agent.Autonumous    Navigate to settings, change language to French, 
+        ...    then go back to home screen and verify the interface is in French"""
+        raise NotImplementedError("Agent.Autonumous is not implemented yet")

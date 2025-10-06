@@ -66,7 +66,7 @@ class ImageUploader:
         else:
             self.logger.warning(
                 "No upload service configured. Images will be returned in base64.",
-                robot_log=False
+                robot_log=True
             )
             return None
 

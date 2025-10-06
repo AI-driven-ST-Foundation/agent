@@ -3,16 +3,16 @@ from typing import Any, Dict, List, Optional
 from src.AiHelper.utilities._logger import RobotCustomLogger
 from src.AiHelper.platforms import DeviceConnector
 from src.AiHelper.agent._aiconnector import AiConnector
-
+from src.AiHelper.utilities.imguploader.imghandler import ImageUploader
 
 class AgentStepRunner:
-    """Orchestrates the Agent.Do and Agent.Check flows without relying on Robot Framework.
+    """Orchestrates the Agent.Do and Agent.VisualCheck flows without relying on Robot Framework.
 
     This class encapsulates:
-      - capturing the UI context
-      - composing prompts (Do/Check)
+      - capturing the UI context and screenshots
+      - composing prompts (Do/VisualCheck)
       - calling the LLM (strict JSON response)
-      - executing/verifying via RobotKeywordExecutor
+      - executing actions and visual verification
 
     Objective: allow `AgentKeywords` to delegate cleanly, to facilitate
     architectural evolution without breaking existing functionality.
@@ -24,19 +24,18 @@ class AgentStepRunner:
         self.platform: DeviceConnector = platform or DeviceConnector()
         # Agent component
         self.agent = AiConnector(provider=llm_client, model=llm_model)
-
+        self.image_uploader = ImageUploader(service="auto")
+        
     # ----------------------- Public API -----------------------
     def do(self, instruction: str) -> None:
         self.logger.info(f"🚀 Starting Agent.Do with instruction: '{instruction}'")
 
         ui_candidates = self.platform.collect_ui_candidates()
-
-        image_url = None
-        result = self.agent.run_do(
+        # TODO: the final logic will be coded when we have the visual model
+        # currently we only work on locators
+        result = self.agent.ask_ai_do(
             instruction=instruction,
             ui_elements=ui_candidates,
-            image_url=image_url,
-            image_base64=None,
             temperature=0,
         )
 
@@ -44,22 +43,35 @@ class AgentStepRunner:
         self._execute_do(result, instruction)
         self.logger.success("✅ Agent.Do completed successfully")
 
-    def check(self, instruction: str) -> None:
-        self.logger.info(f"🔍 Starting Agent.Check with instruction: '{instruction}'")
+    def visual_check(self, instruction: str) -> None:
+        self.logger.info(f"👁️ Starting Agent.VisualCheck with instruction: '{instruction}'")
 
-        ui_candidates = self.platform.collect_ui_candidates()
-        image_url = None
-        result = self.agent.run_check(
+        # Log to Robot Framework
+        from robot.api import logger as rf_logger
+        rf_logger.info("=" * 80)
+        rf_logger.info("AGENT VISUAL CHECK STARTED")
+        rf_logger.info("=" * 80)
+        rf_logger.info(f"Instruction: {instruction}")
+        rf_logger.info("Capturing screenshot for AI analysis...")
+
+        # Capture screenshot
+        self.logger.info("📸 Capturing screenshot...")
+        screenshot_base64 = self.platform.get_screenshot_base64()
+        
+        # Embed screenshot to Robot Framework log
+        self.platform.embed_image_to_log(screenshot_base64, message="Visual Check Screenshot")
+        rf_logger.info("Screenshot captured and sent to AI for analysis")
+        image_url = self.image_uploader.upload_from_base64(screenshot_base64)
+
+        result = self.agent.ask_ai_visual_check(
             instruction=instruction,
-            ui_elements=ui_candidates,
-            image_url=image_url,
-            image_base64=None,
+            image_base_or_url=image_url,
             temperature=0,
         )
 
-        self.logger.info("⚡ Executing verification...")
-        self._execute_check(result)
-        self.logger.success("✅ Agent.Check completed successfully")
+        self.logger.info("⚡ Executing visual verification...")
+        self._execute_visual_check(result)
+        self.logger.success("✅ Agent.VisualCheck completed successfully")
 
     # ----------------------- Internals -----------------------
     def _run_rf_keyword(self, keyword_name: str, *args: Any) -> Any:
@@ -157,40 +169,67 @@ class AgentStepRunner:
         self.logger.error(f"🚫 Unsupported action: {action}")
         raise AssertionError(f"Unsupported action: {action}")
 
-    def _execute_check(self, result: Dict[str, Any]) -> None:
-        assertion = result.get("assertion")
-        locator = result.get("locator", {})
-        expected = result.get("expected")
-        candidates = result.get("candidates", []) or []
+    def _execute_visual_check(self, result: Dict[str, Any]) -> None:
+        verification_result = result.get("verification_result")
+        confidence_score = result.get("confidence_score")
+        analysis = result.get("analysis")
+        found_elements = result.get("found_elements", [])
+        issues = result.get("issues", [])
 
-        self.logger.info(f"🔍 Requested assertion: {assertion}")
-        self.logger.info(f"📍 Provided locator: {locator}")
-        self.logger.info(f"📋 Expected value: {expected}")
-        self.logger.info(f"🎯 Alternative candidates: {candidates}")
+        # Log to Robot Framework with detailed AI response
+        from robot.api import logger as rf_logger
+        
+        rf_logger.info("=" * 80)
+        rf_logger.info("AI VISUAL VERIFICATION RESPONSE")
+        rf_logger.info("=" * 80)
+        rf_logger.info(f"Verification Result: {'PASS' if verification_result else 'FAIL'}")
+        rf_logger.info(f"Confidence Score: {confidence_score:.2f}")
+        rf_logger.info(f"Analysis: {analysis}")
+        
+        if found_elements:
+            rf_logger.info(f"Found Elements ({len(found_elements)} total):")
+            for i, element in enumerate(found_elements[:10], 1):  # Show first 10 elements
+                element_type = element.get("element_type", "unknown")
+                description = element.get("description", "no description")
+                location = element.get("location", "unknown location")
+                confidence = element.get("confidence", 0.0)
+                rf_logger.info(f"  {i}. {element_type}: {description}")
+                rf_logger.info(f"     Location: {location}")
+                rf_logger.info(f"     Confidence: {confidence:.2f}")
+        
+        if issues:
+            rf_logger.info(f"Issues Found ({len(issues)} total):")
+            for i, issue in enumerate(issues, 1):
+                rf_logger.info(f"  {i}. {issue}")
+        
+        rf_logger.info("=" * 80)
 
-        if not locator and candidates:
-            locator = candidates[0]
-            self.logger.info(f"🔄 No primary locator, using first candidate: {locator}")
+        # Also log to custom logger for consistency
+        self.logger.info(f"🔍 Verification result: {verification_result}")
+        self.logger.info(f"📊 Confidence score: {confidence_score}")
+        self.logger.info(f"📝 Analysis: {analysis}")
+        
+        if found_elements:
+            self.logger.info(f"🎯 Found elements: {len(found_elements)} elements detected")
+            for i, element in enumerate(found_elements[:5], 1):  # Show first 5 elements
+                element_type = element.get("element_type", "unknown")
+                description = element.get("description", "no description")
+                confidence = element.get("confidence", 0.0)
+                self.logger.info(f"  {i}. {element_type}: {description} (confidence: {confidence:.2f})")
+        
+        if issues:
+            self.logger.info(f"⚠️ Issues found: {len(issues)} issues detected")
+            for i, issue in enumerate(issues[:3], 1):  # Show first 3 issues
+                self.logger.info(f"  {i}. {issue}")
 
-        if not locator:
-            raise AssertionError("No locator available for verification")
-
-        rf_locator = self.platform.to_rf_locator(locator)
-        self.logger.info(f"🎯 Converted Robot Framework locator: {rf_locator}")
-
-        if assertion in ("visible", "exists"):
-            self.logger.info(f"👁️ Executing: Page Should Contain Element with locator '{rf_locator}'")
-            self._run_rf_keyword("Page Should Contain Element", rf_locator)
-            self.logger.success("✅ Verification succeeded: element present")
-            return
-
-        if assertion == "text_contains":
-            if expected is None:
-                raise AssertionError("Agent.Check 'text_contains' requires 'expected'")
-            self.logger.info(f"📝 Executing: Element Should Contain Text '{expected}' in locator '{rf_locator}'")
-            self._run_rf_keyword("Element Should Contain Text", rf_locator, str(expected))
-            self.logger.success("✅ Verification succeeded: text present")
-            return
-
-        self.logger.error(f"🚫 Unsupported assertion: {assertion}")
-        raise AssertionError(f"Unsupported assertion: {assertion}")
+        # Assert based on verification result
+        if verification_result:
+            self.logger.success("✅ Visual verification passed")
+            rf_logger.info("✅ VISUAL VERIFICATION PASSED")
+        else:
+            self.logger.error("❌ Visual verification failed")
+            rf_logger.error("❌ VISUAL VERIFICATION FAILED")
+            error_msg = f"Visual verification failed. Analysis: {analysis}"
+            if issues:
+                error_msg += f" Issues: {', '.join(issues[:3])}"
+            raise AssertionError(error_msg)

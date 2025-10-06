@@ -31,17 +31,16 @@ class AgentPromptComposer:
         """
         return self._compose_do_messages(instruction, ui_elements, image_url)
 
-    def compose_check_messages(
+    def compose_visual_check_messages(
         self,
         instruction: str,
-        ui_elements: Optional[List[Dict[str, Any]]] = None,
         image_url: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Clear alias for building CHECK messages.
+        """Clear alias for building VISUAL CHECK messages.
 
-        Preferred entrypoint for assertion prompts.
+        Preferred entrypoint for visual verification prompts.
         """
-        return self._compose_check_messages(instruction, ui_elements, image_url)
+        return self._compose_visual_check_messages(instruction, image_url)
 
     # ----------------------- Internals -----------------------
     def _render_ui_candidates(self, ui_elements: Optional[List[Dict[str, Any]]]) -> str:
@@ -103,38 +102,43 @@ class AgentPromptComposer:
             "additionalProperties": False,
         }
 
-    def _get_check_output_schema(self) -> Dict[str, Any]:
+    def _get_visual_check_output_schema(self) -> Dict[str, Any]:
         return {
             "type": "object",
-            "required": ["assertion", "locator"],
+            "required": ["verification_result", "confidence_score", "analysis"],
             "properties": {
-                "assertion": {
+                "verification_result": {
+                    "type": "boolean",
+                    "description": "True if the visual verification passes, False otherwise"
+                },
+                "confidence_score": {
+                    "type": "number",
+                    "minimum": 0.0,
+                    "maximum": 1.0,
+                    "description": "Confidence level of the verification (0.0 to 1.0)"
+                },
+                "analysis": {
                     "type": "string",
-                    "enum": [k["assertion"] for k in self.catalog._get_check_keywords()],
+                    "description": "Detailed explanation of what was found and why the verification passed or failed"
                 },
-                "locator": {
-                    "type": "object",
-                    "required": ["strategy", "value"],
-                    "properties": {
-                        "strategy": {
-                            "type": "string",
-                            "enum": self.catalog._get_locator_strategies(),
-                        },
-                        "value": {"type": "string"},
-                    },
-                },
-                "expected": {"type": ["string", "number", "null"]},
-                "candidates": {
+                "found_elements": {
                     "type": "array",
                     "items": {
                         "type": "object",
-                        "required": ["strategy", "value"],
                         "properties": {
-                            "strategy": {"type": "string"},
-                            "value": {"type": "string"},
-                        },
+                            "element_type": {"type": "string"},
+                            "description": {"type": "string"},
+                            "location": {"type": "string"},
+                            "confidence": {"type": "number", "minimum": 0.0, "maximum": 1.0}
+                        }
                     },
+                    "description": "List of visual elements found during verification"
                 },
+                "issues": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "List of issues or discrepancies found"
+                }
             },
             "additionalProperties": False,
         }
@@ -156,21 +160,20 @@ class AgentPromptComposer:
             "If the screen does not allow the requested action, choose the best locator according to the UI context."
         )
 
-    def _build_system_prompt_check(self) -> str:
-        catalog_text = self.catalog._render_catalog_text(for_action="check")
+    def _build_system_prompt_visual_check(self) -> str:
         return (
-            "You are a mobile test verification engine. "
-            "Your task is to select a single valid assertion and a locator, "
-            "strictly adhering to the JSON output schema. "
-            "No step-by-step reasoning, only the JSON response.\n\n"
-            f"{catalog_text}\n\n"
+            "You are a mobile app visual verification engine. "
+            "Your task is to analyze the provided screenshot and verify if it matches the given instruction. "
+            "You must provide a detailed analysis with confidence scores and reasons for your verification result.\n\n"
             "CRITICAL INSTRUCTIONS:\n"
-            "- ALWAYS PRIORITIZE the 'xpath' strategy when it is available in the UI context\n"
-            "- Use 'xpath' for precise and reliable localization\n"
-            "- Avoid generic strategies that find nothing\n"
-            "- Choose the first element that matches the instruction\n\n"
-            "Constraints: one assertion only. "
-            "If the information is uncertain, choose the most precise assertion possible."
+            "- Analyze the entire screen thoroughly\n"
+            "- Look for text presence/absence, UI elements, colors, layout, and visual patterns\n"
+            "- Provide a confidence score from 0.0 to 1.0\n"
+            "- Give detailed explanations for your verification result\n"
+            "- List any visual elements found during analysis\n"
+            "- Identify any issues or discrepancies\n\n"
+            "You must respond with a strict JSON format following the provided schema. "
+            "No additional text outside the JSON response."
         )
 
     def _build_user_prompt_do(
@@ -193,19 +196,16 @@ class AgentPromptComposer:
             content.append({"type": "image_url", "image_url": {"url": image_url}})
         return {"role": "user", "content": content}
 
-    def _build_user_prompt_check(
+    def _build_user_prompt_visual_check(
         self,
         instruction: str,
-        ui_elements: Optional[List[Dict[str, Any]]] = None,
         image_url: Optional[str] = None,
     ) -> Dict[str, Any]:
-        ui_text = self._render_ui_candidates(ui_elements)
-        schema = self._get_check_output_schema()
+        schema = self._get_visual_check_output_schema()
         text_parts: List[str] = [
-            f"Instruction: {instruction}",
-            "Contexte UI (top éléments):",
-            ui_text,
-            "Répondez en JSON strict (une ligne), schéma:",
+            f"Visual Verification Instruction: {instruction}",
+            "Please analyze the provided screenshot and verify if it matches the instruction.",
+            "Respond with strict JSON following this schema:",
             str(schema),
         ]
         content: List[Dict[str, Any]] = [{"type": "text", "text": "\n\n".join(text_parts)}]
@@ -224,15 +224,14 @@ class AgentPromptComposer:
         self.logger.info("Composed DO prompt with keyword catalog and schema")
         return [system_message, user_message]
 
-    def _compose_check_messages(
+    def _compose_visual_check_messages(
         self,
         instruction: str,
-        ui_elements: Optional[List[Dict[str, Any]]] = None,
         image_url: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
-        system_message = {"role": "system", "content": self._build_system_prompt_check()}
-        user_message = self._build_user_prompt_check(instruction, ui_elements, image_url)
-        self.logger.info("Composed CHECK prompt with keyword catalog and schema")
+        system_message = {"role": "system", "content": self._build_system_prompt_visual_check()}
+        user_message = self._build_user_prompt_visual_check(instruction, image_url)
+        self.logger.info("Composed VISUAL CHECK prompt with analysis schema")
         return [system_message, user_message]
 
 
@@ -309,76 +308,10 @@ class AgentKeywordCatalog:
             },
         ]
 
-    def _get_check_keywords(self) -> List[Dict[str, Any]]:
-        return [
-            {
-                "assertion": "visible",
-                "rf_keyword": "Page Should Contain Element",
-                "requires_locator": True,
-                "arguments": [
-                    {"name": "locator", "required": True},
-                ],
-                "description": "Assert element is present/visible on screen.",
-            },
-            {
-                "assertion": "exists",
-                "rf_keyword": "Page Should Contain Element",
-                "requires_locator": True,
-                "arguments": [
-                    {"name": "locator", "required": True},
-                ],
-                "description": "Alias of visible for presence check.",
-            },
-            {
-                "assertion": "text_contains",
-                "rf_keyword": "Element Should Contain Text",
-                "requires_locator": True,
-                "arguments": [
-                    {"name": "locator", "required": True},
-                    {"name": "expected", "required": True},
-                ],
-                "description": "Assert element text contains expected substring.",
-            },
-
-            {
-                "assertion": "page_text_contains",
-                "rf_keyword": "Page Should Contain Text",
-                "requires_locator": False,
-                "arguments": [
-                    {"name": "expected", "required": True},
-                ],
-                "description": "Le contenu de la page contient le texte attendu.",
-            },
-            {
-                "assertion": "enabled",
-                "rf_keyword": "Element Should Be Enabled",
-                "requires_locator": True,
-                "arguments": [
-                    {"name": "locator", "required": True},
-                ],
-                "description": "L'élément est activé.",
-            },
-            {
-                "assertion": "disabled",
-                "rf_keyword": "Element Should Be Disabled",
-                "requires_locator": True,
-                "arguments": [
-                    {"name": "locator", "required": True},
-                ],
-                "description": "L'élément est désactivé.",
-            },
-        ]
-
-
     def _render_catalog_text(self, for_action: str = "do") -> str:
-        if for_action == "do":
-            items = self._get_do_keywords()
-            header = "Actions autorisées (mapping vers AppiumLibrary):"
-            key = "action"
-        else:
-            items = self._get_check_keywords()
-            header = "Assertions autorisées (mapping vers AppiumLibrary):"
-            key = "assertion"
+        items = self._get_do_keywords()
+        header = "Actions autorisées (mapping vers AppiumLibrary):"
+        key = "action"
 
         lines: List[str] = [header]
         for item in items:
