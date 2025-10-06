@@ -3,13 +3,14 @@ from src.AiHelper.providers.llm._baseclient import BaseLLMClient
 from src.AiHelper.providers.llm._openaiclient import OpenAIClient
 from src.AiHelper.providers.llm._anthropic import AnthropicClient
 from src.AiHelper.providers.llm._gemini import GeminiClient
+from src.AiHelper.providers.llm._deepseek import DeepSeekClient
+from src.AiHelper.providers.llm._ollama import OllamaClient
 from src.AiHelper.config.model_config import ModelConfig
 from src.AiHelper.config.config import Config
 
 class LLMClientFactory:
     """
     Factory class to create and return LLM client instances.
-    Supports multiple providers: OpenAI, Anthropic (Claude), and Google Gemini.
     """
     
     # Load default models from configuration file
@@ -18,6 +19,8 @@ class LLMClientFactory:
         "openai": _model_config.get_provider_default_model("openai"),
         "anthropic": _model_config.get_provider_default_model("anthropic"),
         "gemini": _model_config.get_provider_default_model("gemini"),
+        "deepseek": _model_config.get_provider_default_model("deepseek"),
+        "ollama": _model_config.get_provider_default_model("ollama"),
     }
     
     @staticmethod
@@ -29,7 +32,7 @@ class LLMClientFactory:
         Create and return an LLM client instance.
         
         Args:
-            client_name: Name of the provider ('openai', 'anthropic', 'gemini')
+            client_name: Name of the provider ('openai', 'anthropic', 'gemini', 'deepseek', 'ollama')
             model: Model name to use (if None, uses default for the provider)
             
         Returns:
@@ -54,10 +57,14 @@ class LLMClientFactory:
         elif client_name_lower == "gemini" or client_name_lower == "google":
             api_key = config.GEMINI_API_KEY
             return GeminiClient(model=model)
+        elif client_name_lower == "deepseek":
+            api_key = config.DEEPSEEK_API_KEY
+            return DeepSeekClient(model=model, api_key=api_key)
+        elif client_name_lower == "ollama":
+            base_url = config.OLLAMA_BASE_URL
+            return OllamaClient(model=model, base_url=base_url)
         
         # Future implementations
-        elif client_name_lower == "deepseek":
-            raise NotImplementedError("Deepseek is not implemented yet")
         elif client_name_lower == "huggingface":
             raise NotImplementedError("Huggingface is not implemented yet")
         elif client_name_lower == "litellm":
