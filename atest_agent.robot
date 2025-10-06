@@ -11,9 +11,9 @@ Documentation  This will be the most high level acceptance test for the library
 ...  typical actions in the automation are ; click element , input text , 
 ...  page should contains text ,
 Library    AppiumLibrary
-Library    src.AiHelper.AgentKeywords
+Library    src.AiHelper.AgentKeywords    WITH NAME    src.AiHelper.AgentKeywords
 *** Test Cases ***
-Test Agent
+Test case 1
     [Documentation]   this doesn't work of cours e bcause we didn't code the 
     ...   high level keywords yet , but just as an example 
     Open Application        remote_url=https://hub-cloud.browserstack.com/wd/hub

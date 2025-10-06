@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional
 
+
 class BaseLLMClient(ABC):
     @abstractmethod
     def create_chat_completion(
@@ -17,3 +18,5 @@ class BaseLLMClient(ABC):
     @abstractmethod
     def format_response(self, response, include_tokens: bool = True, include_reason: bool = False):
         pass
+
+

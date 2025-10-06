@@ -7,6 +7,11 @@ pabot_results/
 *.html
 *.xml
 *.log
+results/
+.pabotsuitenames
+# BrowserStack
+log/
+key-metrics.json.lock
 # C extensions
 *.so
 # Distribution / packaging
@@ -208,4 +213,5 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
-.env
+
+

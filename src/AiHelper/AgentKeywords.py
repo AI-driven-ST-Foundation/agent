@@ -1,7 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from src.AiHelper.common._agentengine import AgentEngine
-from src.AiHelper.common._logger import RobotCustomLogger
+from src.AiHelper._step_runner import AgentStepRunner
+from src.AiHelper.utilities._logger import RobotCustomLogger
+from robot.api.deco import keyword
 
 
 class AgentKeywords:
@@ -18,7 +19,7 @@ class AgentKeywords:
 
     def __init__(self, llm_client: str = "openai", llm_model: str = "gpt-4o-mini"):
         self.logger = RobotCustomLogger()
-        self.engine = AgentEngine(llm_client=llm_client, llm_model=llm_model)
+        self.engine = AgentStepRunner(llm_client=llm_client, llm_model=llm_model)
 
     # ----------------------- Public RF Keywords -----------------------
     def agent_do(self, instruction: str):
