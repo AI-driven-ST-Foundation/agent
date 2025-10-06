@@ -47,19 +47,19 @@ class FreeImageHostUploader(BaseImageUploader):
         payload = {"key": self.api_key, "action": "upload", "source": base64_data, "format": "json"}
         return self._make_request(payload)
 
-    def upload_from_file(self, file_path: str) -> Optional[str]:
-        try:
-            with open(file_path, "rb") as f:
-                payload = {
-                    "key": (None, self.api_key),
-                    "action": (None, "upload"),
-                    "format": (None, "json"),
-                    "source": (os.path.basename(file_path), f),
-                }
-                return self._make_request(payload, files=True)
-        except FileNotFoundError:
-            full_path = os.path.abspath(file_path)
-            self.logger.error(f"File not found: {full_path}")
-            raise FileNotFoundError(f"File not found: {full_path}")
+    # def upload_from_file(self, file_path: str) -> Optional[str]:
+    #     try:
+    #         with open(file_path, "rb") as f:
+    #             payload = {
+    #                 "key": (None, self.api_key),
+    #                 "action": (None, "upload"),
+    #                 "format": (None, "json"),
+    #                 "source": (os.path.basename(file_path), f),
+    #             }
+    #             return self._make_request(payload, files=True)
+    #     except FileNotFoundError:
+    #         full_path = os.path.abspath(file_path)
+    #         self.logger.error(f"File not found: {full_path}")
+    #         raise FileNotFoundError(f"File not found: {full_path}")
 
 

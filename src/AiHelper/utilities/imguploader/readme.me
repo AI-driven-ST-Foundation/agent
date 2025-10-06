@@ -1,6 +1,14 @@
 
 
 imghandler is the facade and have one responsability : 
-recieve image path or image base64 return link 
+recieve image base64 return link or base64 if failed to upload 
 
 whatever the api will be used ( there is a default one , but another ones for backup )
+
+
+current working which is enough for mvp :
+
+Handles 3 fallback cases with warnings:
+✅ No provider configured → returns base64 + warning
+✅ Upload fails (returns None) → returns base64 + warning
+✅ Exception raised → returns base64 + warning

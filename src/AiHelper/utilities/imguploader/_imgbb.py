@@ -49,16 +49,16 @@ class ImgBBUploader(BaseImageUploader):
             payload["expiration"] = str(expiration)
         return self._make_request(payload)
 
-    def upload_from_file(self, file_path: str, expiration: Optional[int] = None) -> Optional[str]:
-        try:
-            with open(file_path, "rb") as file:
-                payload = {"key": (None, self.api_key), "image": (os.path.basename(file_path), file)}
-                if expiration is not None:
-                    payload["expiration"] = (None, str(expiration))
-                return self._make_request(payload, files=True)
-        except FileNotFoundError:
-            full_path = os.path.abspath(file_path)
-            self.logger.error(f"File not found: {full_path}")
-            raise FileNotFoundError(f"File not found: {full_path}")
+    # def upload_from_file(self, file_path: str, expiration: Optional[int] = None) -> Optional[str]:
+    #     try:
+    #         with open(file_path, "rb") as file:
+    #             payload = {"key": (None, self.api_key), "image": (os.path.basename(file_path), file)}
+    #             if expiration is not None:
+    #                 payload["expiration"] = (None, str(expiration))
+    #             return self._make_request(payload, files=True)
+    #     except FileNotFoundError:
+    #         full_path = os.path.abspath(file_path)
+    #         self.logger.error(f"File not found: {full_path}")
+    #         raise FileNotFoundError(f"File not found: {full_path}")
 
 
