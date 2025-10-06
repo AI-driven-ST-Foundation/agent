@@ -11,6 +11,14 @@
     "gemini": {
       "name": "Google Gemini",
       "default_model": "gemini-2.5-flash"
+    },
+    "deepseek": {
+      "name": "DeepSeek",
+      "default_model": "deepseek-chat"
+    },
+    "ollama": {
+      "name": "Ollama (Local)",
+      "default_model": "llama3.2"
     }
   },
   "models": {
@@ -196,6 +204,16 @@
       "max_context_tokens": 32768,
       "notes": "Legacy model"
     },
+    "deepseek-chat": {
+      "provider": "deepseek",
+      "display_name": "DeepSeek Chat",
+      "pricing": {
+        "input": 0.00014,
+        "output": 0.00028
+      },
+      "max_context_tokens": 65536,
+      "notes": "Default DeepSeek model via Anthropic API compatibility"
+    },
     "deepseek-r1": {
       "provider": "deepseek",
       "display_name": "DeepSeek R1",
@@ -240,6 +258,106 @@
         "output": 0.0002
       },
       "max_context_tokens": 1000000
+    },
+    "llama3.2": {
+      "provider": "ollama",
+      "display_name": "Llama 3.2 (3B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 131072,
+      "notes": "Local model, free to use. Fast and efficient."
+    },
+    "llama3.2:1b": {
+      "provider": "ollama",
+      "display_name": "Llama 3.2 (1B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 131072,
+      "notes": "Local model, very lightweight and fast"
+    },
+    "llama3.1": {
+      "provider": "ollama",
+      "display_name": "Llama 3.1 (8B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 131072,
+      "notes": "Local model, better reasoning capabilities"
+    },
+    "llama3.3:70b": {
+      "provider": "ollama",
+      "display_name": "Llama 3.3 (70B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 131072,
+      "notes": "Local model, most powerful. Requires ~40GB RAM"
+    },
+    "mistral": {
+      "provider": "ollama",
+      "display_name": "Mistral (7B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 32768,
+      "notes": "Local model, balanced performance"
+    },
+    "codellama": {
+      "provider": "ollama",
+      "display_name": "Code Llama (7B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 16384,
+      "notes": "Local model, optimized for code generation"
+    },
+    "phi3": {
+      "provider": "ollama",
+      "display_name": "Phi-3 (3.8B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 131072,
+      "notes": "Local model, Microsoft's efficient model"
+    },
+    "gemma2": {
+      "provider": "ollama",
+      "display_name": "Gemma 2 (9B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 8192,
+      "notes": "Local model, Google's open model"
+    },
+    "qwen2.5": {
+      "provider": "ollama",
+      "display_name": "Qwen 2.5 (7B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 131072,
+      "notes": "Local model, excellent for multilingual tasks"
+    },
+    "deepseek-coder": {
+      "provider": "ollama",
+      "display_name": "DeepSeek Coder (6.7B)",
+      "pricing": {
+        "input": 0.0,
+        "output": 0.0
+      },
+      "max_context_tokens": 16384,
+      "notes": "Local model, specialized for coding tasks"
     }
   },
   "metadata": {
