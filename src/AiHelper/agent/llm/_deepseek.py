@@ -1,8 +1,8 @@
 from anthropic import Anthropic, APIError
 from typing import Optional, Dict, List, Union
 import os
-from src.AiHelper.common._logger import RobotCustomLogger
-from src.AiHelper.providers.llm._baseclient import BaseLLMClient
+from src.AiHelper.utilities._logger import RobotCustomLogger
+from src.AiHelper.agent.llm._baseclient import BaseLLMClient
 
 
 class DeepSeekClient(BaseLLMClient):
